@@ -1,4 +1,5 @@
-Python script that collect file information into a database.
+Python script that walks through the directories and store their files information into Sqlite database.
+Python 3 is required for that script. Tested on Linux environment. Can handle big files and does not overload your system much.
 
 How to use the script?
 
