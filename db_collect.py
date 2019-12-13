@@ -52,7 +52,7 @@ class FileStatsCollector(object):
             readable_hash = hashlib.md5(bytes).hexdigest()
             return readable_hash
     
-    def ScanFiles(self, dir_path):
+    def ScanFiles(self, dir_path): # insert files information into database 
         sql = '''INSERT INTO filestats(filename, file_size, modification_date, filehash)
               VALUES(?,?,?,?)'''
         
@@ -69,40 +69,40 @@ class FileStatsCollector(object):
 
         print(self.cursor.lastrowid)
     
-    def CheckUpdates(self): # not ready yet, needs to be finished
+    def CheckUpdates(self): # gets through the files on disk and compares them with the database
         print('Check updated files ')
-        log_path = 'logs/today.log'
-        f = open("./logs/helloworld.txt", "a+")
-        sql = '''select * from filestats limit 20;'''
+        logs_file = datetime.datetime.now().strftime('%Y-%m-%d-%H_%M') + '.txt'
+        f = open(os.path.join("./logs/",logs_file), "a+")
+        sql = '''select * from filestats'''
         self.cursor.execute(sql)
         response = self.cursor.fetchall()
 
-        print(response[0])
-
-        file_path = response[0][1]
-        if os.path.exists(file_path):
+        # working through list
+        while response:
+            file_record = response.pop() # getting a file record from list we get from DB
+            file_path = file_record[1]
             current_date_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print('file exists', current_date_time, file_path)
-            
-            file_size = os.path.getsize(file_path)
-            m_date = os.path.getmtime(file_path)
-            readable_date = datetime.datetime.fromtimestamp(m_date).strftime('%Y-%m-%d %H:%M:%S')
-            md5_hash = self.CalcHash(file_path)
-            current_record = (file_path, file_size, readable_date, md5_hash)
-            print(current_record)
-            print(response[0][1:-1])
-            if current_record == response[0][1:-1]:
-                print(f'File {file_path} is not changed.')
-            else:
-                print(f'File {file_path} is changed.')
-                f.write(current_date_time + ': ' + file_path + 'file has been changed./n')
-        else:
-            print('file file_path does not exists')
-            f.write(f'{current_date_time}: {file_path} file was not found./n')
 
-        # for path, folder, file in os.walk(self.dirpath):
-        #     for file_name in file():
-        #         print(file_name)
+            if os.path.exists(file_path):
+                print('file exists', current_date_time, file_path)
+                
+                file_size = os.path.getsize(file_path)
+                m_date = os.path.getmtime(file_path)
+                readable_date = datetime.datetime.fromtimestamp(m_date).strftime('%Y-%m-%d %H:%M:%S')
+                md5_hash = self.CalcHash(file_path)
+                current_record = (file_path, file_size, readable_date, md5_hash)
+                print(current_record)
+                print(response[0][1:-1])
+                if current_record == file_record[1:-1]:
+                    f.write(current_date_time + ': ' + file_path + ' corresponds to the DB Info.\n')
+                    #print(f'File {file_path} is not changed.')
+                else:
+                    #print(f'File {file_path} is changed.')
+                    f.write(current_date_time + ': ' + file_path + ' file has been changed.\n')
+            else:
+                print('file file_path does not exists')
+                f.write(f'{current_date_time}: {file_path} file was not found.\n')
+        f.close()
 
 if __name__ == '__main__':
     SW = SqliteWorker()
