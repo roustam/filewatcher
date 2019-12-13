@@ -70,15 +70,45 @@ class FileStatsCollector(object):
         print(self.cursor.lastrowid)
     
     def CheckUpdates(self): # not ready yet, needs to be finished
-        sql = '''  '''
-        for path, folder, file in os.walk(self.dirpath):
-            for file_name in file():
-                print(file_name)
+        print('Check updated files ')
+        log_path = 'logs/today.log'
+        f = open("./logs/helloworld.txt", "a+")
+        sql = '''select * from filestats limit 20;'''
+        self.cursor.execute(sql)
+        response = self.cursor.fetchall()
+
+        print(response[0])
+
+        file_path = response[0][1]
+        if os.path.exists(file_path):
+            current_date_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print('file exists', current_date_time, file_path)
+            
+            file_size = os.path.getsize(file_path)
+            m_date = os.path.getmtime(file_path)
+            readable_date = datetime.datetime.fromtimestamp(m_date).strftime('%Y-%m-%d %H:%M:%S')
+            md5_hash = self.CalcHash(file_path)
+            current_record = (file_path, file_size, readable_date, md5_hash)
+            print(current_record)
+            print(response[0][1:-1])
+            if current_record == response[0][1:-1]:
+                print(f'File {file_path} is not changed.')
+            else:
+                print(f'File {file_path} is changed.')
+                f.write(current_date_time + ': ' + file_path + 'file has been changed./n')
+        else:
+            print('file file_path does not exists')
+            f.write(f'{current_date_time}: {file_path} file was not found./n')
+
+        # for path, folder, file in os.walk(self.dirpath):
+        #     for file_name in file():
+        #         print(file_name)
 
 if __name__ == '__main__':
     SW = SqliteWorker()
     cursor = SW.create_connection()
     SW.create_table(cursor)
+    FColl = FileStatsCollector()
     # cursor.execute("SELECT name from sqlite_master where type = 'table';")
     # response = cursor.fetchall()
     # cursor.execute("SELECT datetime('now');")
@@ -89,7 +119,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 # cli parsing code block
     if args.d == None:
-        print('Scanning existing records for changes. Empty parameter has been provided.')
+        print('Scanning existing records for changes. No parameters has been provided.')
+        FColl.CheckUpdates()
     else:
         #checking if it is a valid path
 
